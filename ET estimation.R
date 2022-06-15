@@ -9,7 +9,7 @@ data=read_xlsx('Vernal 2020.xlsx')
 n=length(data$Date)
 
 # Assign alpha value
-a=0.426282799121919
+a=0.42780695937849
 
 # Calculate daily change in SM
 data$delta=c(NA)
@@ -18,28 +18,34 @@ for (i in (2:n)) {
 }
 
 # Calculate daily ET estimate
-data$ET_d=c(NA)
+data$ET=c(NA)
 
 for (i in (2:n)) {
-  if (data$delta[i]<0) {data$ET_d[i]=a*(data$ETr[i]+abs(data$delta[i]))}
-  else {data$ET_d[i]=2*a*data$ETr[i]}}
+  if (data$delta[i]<0) {data$ET[i]=a*(data$ETr[i]+abs(data$delta[i]))}
+  else {data$ET[i]=2*a*data$ETr[i]}}
 
+# Eliminate spikes in daily ET: ET>1.25ETr=1.25ETr
+for (i in (2:n)) {
+  if (data$ET[i]>1.25*data$ETr[i]) 
+  {data$ET[i]=1.25*data$ETr[i]}
+}
+  
 # Plot of daily values
 
 plot(data$Date, data$ETor, type='l', col='goldenrod', ylab='mm/day', xlab='2020', ylim=c(0,12))
 lines(data$Date, data$ETcl, col='olivedrab')
-lines(data$Date, data$ET_d, col='cornflowerblue')
+lines(data$Date, data$ET, col='cornflowerblue')
 legend('topright', inset=0.01, legend=c('EC original', 'EC closed', 'ET'), lty=1, col=c('goldenrod', 'olivedrab', 'cornflowerblue'))
 
 # Save daily results
 write_xlsx(data, 'Daily Results 2020.xlsx')
 
 # Calculate monthly cumulative ET
-data$ET_d[1]=0
+data$ET[1]=0
 ETa_month=aggregate(x=data$ETa, by=list(data$Month), FUN=sum)
 ETor_month=aggregate(x=data$ETor, by=list(data$Month), FUN=sum)
 ETcl_month=aggregate(x=data$ETcl, by=list(data$Month), FUN=sum)
-ET_month=aggregate(x=data$ET_d, by=list(data$Month), FUN=sum)
+ET_month=aggregate(x=data$ET, by=list(data$Month), FUN=sum)
 
 Cumulative.df=data.frame('Month'=4:10, 'ETa'=ETa_month$x, 'ETor'=ETor_month$x, 
                          'ETcl'=ETcl_month$x, 'ET'=ET_month$x)
@@ -57,7 +63,7 @@ legend('topright', inset=0.01, legend=c('ETor', 'ETcl', 'ET'), lty=1, col=c('gol
 data$ETor_cum=cumsum(data$ETor)
 data$ETcl_cum=cumsum(data$ETcl)
 data$ETa_cum=cumsum(data$ETa)
-data$ET_cum=cumsum(data$ET_d)
+data$ET_cum=cumsum(data$ET)
 
 # Plot seasonal cumulative ET
 plot(data$Date, data$ETor_cum, type='l', ylim=c(0,1000), ylab='mm', xlab='2020', col='goldenrod')
